@@ -1,0 +1,18 @@
+org: karteekv
+app: aws-node
+service: aws-express
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  timeout: 25 
+
+functions:
+  api:
+    handler: index.handler
+    events:
+      - httpApi: '*'
+  
+plugins:
+  - serverless-offline

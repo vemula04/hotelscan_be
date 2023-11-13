@@ -44,26 +44,26 @@ router.post('/saveItem', async (req, res) => {
         await item.save()
             .then(async (data) => {
                 //artifact...
-                
+
                 console.log('Item saved Successfully');
 
             })
             .catch((err) => console.log(err));
 
-        if(item._id) {
+        if (item._id) {
             let artifact = await Artifact.findOne({ title: name, item_id: item._id });
-                if (!artifact) {
-                    artifact = new Artifact({
-                        title: name,
-                        item_id: item._id,
-                        url: url,
-                        created_by: created_by
-                    });
-                    await artifact.save()
-                    .then( async (data) => {
+            if (!artifact) {
+                artifact = new Artifact({
+                    title: name,
+                    item_id: item._id,
+                    url: url,
+                    created_by: created_by
+                });
+                await artifact.save()
+                    .then(async (data) => {
                         console.log("Artifact saved ", artifact._id);
                     })
-                }
+            }
         }
         res.send(item);
 
@@ -74,43 +74,46 @@ router.post('/saveItem', async (req, res) => {
 
 router.get("/getitems", async (req, res, next) => {
     try {
-        const {is_special, tenant_id, is_all} = req.query;
+        console.log(req.query);
+        const { is_special, tenant_id, is_all } = req.query;
         let items,
-        artifacts, 
-        query = {
-            tenant_id:tenant_id,            
-            status: true
-        };
-        if(!is_all) {
+            artifacts,
             query = {
-                tenant_id:tenant_id, 
-                is_special:is_special, 
+                tenant_id: tenant_id,
+                status: true
+            };
+
+        if (!is_all) {
+            query = {
+                tenant_id: tenant_id,
+                is_special: is_special,
                 status: true
             }
         }
         items = await Item.find(query);
-        // console.log(items)
-        if(items) {
-            console.log(items[0]._id)
-            artifacts = await Artifact.find({item_id:items[0]._id})            
+        
+        const agg = [
+            {
+                '$lookup': {
+                    'from': 'items',
+                    'localField': 'item_id',
+                    'foreignField': '_id',
+                    'as': 'items'
+                }
+            }
+        ];
+        const result = await Artifact.aggregate(agg);
+        if(result) {
+           let finalResults =  result.filter ( (res) => {
+                return res.items.length > 0
+            });
+            res.send(finalResults);
         }
+        
 
-        await artifacts.aggregate([            
-            { $lookup:
-                    { 
-                        from: "items",
-                        localField: "item_id",
-                        foreignField: "_id",
-                        as: "items"                        
-                    }
-            }]).exec(function(error, items){
-
-                if(error){return next(error);}        
-                console.log(items);
-        });
-        // res.send(artifacts);
-    
     } catch (err) {
+        console.log("ERROR :: ")
+        console.error(err);
         res.status(400).send(err);
     }
 })

@@ -65,7 +65,10 @@ router.post('/saveItem', async (req, res) => {
                     })
             }
         }
-        res.send(item);
+        res.send({
+            status: 200,
+            data: item
+        });
 
     } catch (err) {
         res.status(402).send(err);
@@ -91,7 +94,7 @@ router.get("/getitems", async (req, res, next) => {
             }
         }
         items = await Item.find(query);
-        
+
         const agg = [
             {
                 '$lookup': {
@@ -103,13 +106,13 @@ router.get("/getitems", async (req, res, next) => {
             }
         ];
         const result = await Artifact.aggregate(agg);
-        if(result) {
-           let finalResults =  result.filter ( (res) => {
+        if (result) {
+            let finalResults = result.filter((res) => {
                 return res.items.length > 0
             });
             res.send(finalResults);
         }
-        
+
 
     } catch (err) {
         console.log("ERROR :: ")

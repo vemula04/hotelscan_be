@@ -5,7 +5,7 @@
  */
 //process.env => ASM(AWS Secrets Manager)
 module.exports = {
-    "BASE_URI": "http://localhost:3002",
+    "BASE_URI": "http://localhost:8080",
     "CONSTANTS": { //constants declared here for entire app
         "ISMOCKENABLED": false,
         "IS_PROD": false,

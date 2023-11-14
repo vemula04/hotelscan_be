@@ -20,8 +20,8 @@ router.post('/onboard', async (req, res) => {
     const { created_by, updated_by } = { "created_by": "122", "updated_by": "3242345" };
     try {
         const tenant = new Tenant({ "name": name, "url": url, "primary_color": primary_color, "secondary_color": secondary_color, "email": email, "created_by": created_by });
-        const fn_tnt = await Tenant.findOne({"email": email});        
-        if(!fn_tnt){
+        const fn_tnt = await Tenant.findOne({ "email": email });
+        if (!fn_tnt) {
             await tenant.save()
                 .then(async (data) => {
                     console.log('Tenant Onbaroded Successfully');
@@ -30,7 +30,7 @@ router.post('/onboard', async (req, res) => {
             if (tenant) {
                 const tmp_pwd = crypto.randomBytes(10).toString("hex");
                 //fetch tenant role...
-                const role = await Roles.findOne({"name": "tenant"});                
+                const role = await Roles.findOne({ "name": "tenant" });
                 //save the token of a tenant...
                 const token = await new Token({
                     tenant_id: (tenant._id).toString(),
@@ -368,7 +368,7 @@ router.post('/onboard', async (req, res) => {
                                     color: #999999;
                                     font-family: sans-serif;" class="footer">
 
-                                        <!-- This email template was sent to&nbsp;you becouse we&nbsp;want to&nbsp;make the&nbsp;world a&nbsp;better place. You&nbsp;could change your <a href="https://github.com/konsav/email-templates/" target="_blank" style="text-decoration: underline; color: #999999; font-family: sans-serif; font-size: 13px; font-weight: 400; line-height: 150%;">subscription settings</a> anytime. -->
+                                        <!-- This email template was sent to&nbsp;you becouse we&nbsp;want to&nbsp;make the&nbsp;world a&nbsp;better place. You&nbsp;could change your <a href="${config.BASE_URI}/${name}/login" target="_blank" style="text-decoration: underline; color: #999999; font-family: sans-serif; font-size: 13px; font-weight: 400; line-height: 150%;">subscription settings</a> anytime. -->
 
                                         <!-- ANALYTICS -->
                                         <!-- https://www.google-analytics.com/collect?v=1&tid={{UA-Tracking-ID}}&cid={{Client-ID}}&t=event&ec=email&ea=open&cs={{Campaign-Source}}&cm=email&cn={{Campaign-Name}} -->
@@ -390,10 +390,13 @@ router.post('/onboard', async (req, res) => {
                     // console.log(`verification link :: ${message}`);
                     await sendEmail(email, `Tenant Onbarding Credentails - ${name}`, "", message);
                 }
-                res.send(tenant);
-            } 
+                res.send({
+                    statusCode: 200,
+                    message: "Success"
+                });
+            }
         } else {
-            res.status(200).send({message:"Duplicate email id"})
+            res.status(500).send({ message: "Duplicate email id", statusCode: 501 })
         }
 
     } catch (error) {
@@ -468,11 +471,53 @@ router.get("/getTenants", async (req, res) => {
             results.push(value);
         })
         if (tenant) {
-            res.send(results);
+            res.send({
+                statusCode: 200,
+                data: results
+            }).status(200);
+        } else {
+            res.send({
+                statusCode: 502,
+                message: "No Tenants found"
+            }).status(200);
         }
 
     } catch (err) {
         res.status(400).send(err)
     }
-})
+});
+router.get("/getTenantByName", async (req, res) => {
+    try {
+
+        // Query 
+        const { name } = req.query;
+        const query = { name: name };
+        const options = {
+            // Sort returned documents in ascending order by title (A->Z)
+            sort: { name: -1 },
+            // Include only the `name` and `logo` fields in each returned document
+            projection: { _id: 0, name: 1, logo: 1 },
+        };
+        const tenant = await Tenant.find(query);
+        let results = [];
+        tenant.forEach((value) => {
+            console.log(value);
+            results.push(value);
+        });
+        if (tenant) {
+            res.send({
+                statusCode: 200,
+                data: results
+            }).status(200);
+        } else {
+            res.send({
+                statusCode: 502,
+                message: `Please check tenant name <${name}>`
+            })
+        }
+
+    } catch (err) {
+        res.status(400).send(err)
+    }
+});
 module.exports = router;

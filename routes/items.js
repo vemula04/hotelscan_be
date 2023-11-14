@@ -74,6 +74,28 @@ router.post('/saveItem', async (req, res) => {
         res.status(402).send(err);
     }
 });
+const prepareItemsArtifacts = (finalResults) => {
+    try {
+        let items = [];
+        finalResults.map((fres) => {
+            console.log(fres);
+            for (const item of fres.items) {
+                //   if (item?.is_special && item.is_special) {
+
+                //   }
+                items.push({
+                    artifact_id: fres._id,                    
+                    url: fres.url,
+                    ...item
+                });
+            }
+            // items_artifact = fres.filter( itm => itm.is_special);
+        });
+        return items;
+    } catch (err) {
+        throw err;
+    }
+};
 
 router.get("/getitems", async (req, res, next) => {
     try {
@@ -83,42 +105,48 @@ router.get("/getitems", async (req, res, next) => {
             artifacts,
             query = {
                 tenant_id: tenant_id,
-                status: true
+                status: true,
             };
 
         if (!is_all) {
             query = {
                 tenant_id: tenant_id,
                 is_special: is_special,
-                status: true
-            }
+                status: true,
+            };
         }
         items = await Item.find(query);
 
         const agg = [
             {
-                '$lookup': {
-                    'from': 'items',
-                    'localField': 'item_id',
-                    'foreignField': '_id',
-                    'as': 'items'
-                }
-            }
+                $lookup: {
+                    from: "items",
+                    localField: "item_id",
+                    foreignField: "_id",
+                    as: "items",
+                },
+            },
         ];
         const result = await Artifact.aggregate(agg);
         if (result) {
-            let finalResults = result.filter((res) => {
-                return res.items.length > 0
+            const finalResults = result.filter((res) => {
+                return res.items.length > 0;
             });
-            res.send(finalResults);
+            const items = prepareItemsArtifacts(finalResults);
+            res.send({
+                statusCode: 200,
+                data: items
+            });
         }
-
-
     } catch (err) {
-        console.log("ERROR :: ")
+        console.log("ERROR :: ");
         console.error(err);
-        res.status(400).send(err);
+        res.status(400).send({
+            statusCode: 502,
+            message: err
+        });
     }
-})
+});
+
 
 module.exports = router;

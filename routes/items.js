@@ -22,15 +22,16 @@ router.post('/saveItem', async (req, res) => {
 
     try {
 
-        const { tenant_id, name, is_special, item_price, promotional_price, is_promotional_applicable, is_coupon_applicable, coupon_code, item_desc, url, expired_on, created_by } = req.body;
+        const { tenant_id, name, is_special, item_price, promotional_price, is_promotional_applicable, is_coupon_applicable, coupon_code, item_desc, url, expired_on, created_by, spicy_level } = req.body;
 
         const fileExt = utils.getFileExtension(url);
-        const is_video = utils.isVideoType(fileExt);
+        console.log(fileExt);
+        // const is_video = utils.isVideoType(fileExt);
         //Item saving...
         const item = new Item({
             tenant_id: tenant_id,
             name: name,
-            is_video: is_video,
+            is_video: false,
             is_special: is_special,
             expired_on: (expired_on),
             item_price: item_price,
@@ -39,7 +40,8 @@ router.post('/saveItem', async (req, res) => {
             is_coupon_applicable: is_coupon_applicable,
             coupon_code: coupon_code,
             item_desc: item_desc,
-            created_by: created_by
+            created_by: created_by,
+            spicy_level: spicy_level
         })
         await item.save()
             .then(async (data) => {
@@ -74,24 +76,25 @@ router.post('/saveItem', async (req, res) => {
         res.status(402).send(err);
     }
 });
-const prepareItemsArtifacts = (finalResults) => {
+const prepareItemsArtifacts = (finalResults, item_ids) => {
     try {
-        let items = [];
+        let filtered_items = [];
         finalResults.map((fres) => {
-            console.log(fres);
-            for (const item of fres.items) {
-                //   if (item?.is_special && item.is_special) {
-
-                //   }
-                items.push({
-                    artifact_id: fres._id,                    
-                    url: fres.url,
-                    ...item
-                });
+            // console.log(fres);
+            for (const item of fres.items) {                
+                if(item_ids.includes(fres.item_id.toString())) {
+                    console.log("id matched ::", fres.item_id.toString());
+                    filtered_items.push({
+                        artifact_id: fres._id,                    
+                        url: fres.url,
+                        ...item
+                    });
+                }
+                
             }
-            // items_artifact = fres.filter( itm => itm.is_special);
         });
-        return items;
+        
+        return filtered_items;
     } catch (err) {
         throw err;
     }
@@ -115,27 +118,41 @@ router.get("/getitems", async (req, res, next) => {
                 status: true,
             };
         }
+        console.log(query)
         items = await Item.find(query);
-
+        let item_ids = [];
+        if(items.length) { 
+            item_ids = items.map(({ _id }) => _id.toString() )
+        }
+        console.log(`item_ids ::`, item_ids)
         const agg = [
             {
                 $lookup: {
                     from: "items",
+                    // let: {ID: '_id'},
                     localField: "item_id",
                     foreignField: "_id",
-                    as: "items",
+                    as: "items"
+                    // pipeline: [{$match: {
+                    //     $expr: {
+                    //      $eq: [
+                    //       '$item_id', '$$ID'
+                    //      ]
+                    // }}}]
                 },
+                
             },
         ];
+        console.log(`agg :: `, JSON.stringify(agg));
         const result = await Artifact.aggregate(agg);
         if (result) {
             const finalResults = result.filter((res) => {
                 return res.items.length > 0;
             });
-            const items = prepareItemsArtifacts(finalResults);
+            const aitems = prepareItemsArtifacts(finalResults, item_ids);
             res.send({
                 statusCode: 200,
-                data: items
+                data: aitems
             });
         }
     } catch (err) {

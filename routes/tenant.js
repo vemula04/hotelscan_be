@@ -267,7 +267,7 @@ router.post('/onboard', async (req, res) => {
                                                             padding-top: 40px;
                                                             color: #000000;
                                                             font-family: sans-serif;color: #127DB3;">
-                                                            <a href="${config.BASE_URI}/${name}/login" style="    border-radius: 15px;
+                                                            <a href="${config.BASE_URI}/#/${name}/tenantlogin" style="    border-radius: 15px;
                                             border: 1px solid #000;
                                             padding: 10px;
                                             background: #0c3c5b;

@@ -85,6 +85,10 @@ const ItemsSchema = new mongoose.Schema({
   currency_code: {
     type: String,
     default: "AUD"
+  },
+  spicy_level: {
+    type: Number,
+    default: 1
   }
 });
 

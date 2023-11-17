@@ -1,25 +1,31 @@
 const serverless = require("serverless-http");
 const express = require("express");
 const cors = require('cors');
+require('dotenv').config();
 const app = express();
+const upload = require("express-fileupload");
 const bodyParser = require('body-parser');
 // const indexRouter = require('./routes/index');
 const tenantRouter = require("./routes/tenant");
 const userRouter = require("./routes/user");
 const tokenRouter = require("./routes/tokens");
 const itemRouter = require("./routes/items");
+const uploadRouter = require('./routes/s3upload');
 // Configuring body parser middleware
 // app.use(bodyParser.urlencoded({ extended: false }));
 // app.use(bodyParser.json());
 app.use(bodyParser.json({limit: "50mb"}));
 app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
 app.use(cors());
+app.use(upload());
+
 
 // app.use('/', indexRouter);
 app.use('/', tenantRouter);
 app.use('/', userRouter);
 app.use('/', tokenRouter);
 app.use('/', itemRouter);
+app.use('/', uploadRouter);
 /*
 app.get("/", (req, res, next) => {
 

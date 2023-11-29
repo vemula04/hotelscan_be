@@ -89,7 +89,11 @@ const ItemsSchema = new mongoose.Schema({
   spicy_level: {
     type: Number,
     default: 1
-  }
+  },
+  is_veg: {
+    type: Boolean,
+    default: true
+  },
 });
 
 module.exports = mongoose.model("items", ItemsSchema);

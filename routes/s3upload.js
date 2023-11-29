@@ -17,7 +17,7 @@ const s3 = new AWS.S3({
             Bucket: process.env.AWS_S3_BUCKET, // bucket you want to upload to
             Key: `public/hotelscan-${Date.now()}-${file.name}`, // put all image to fileupload folder with name scanskill-${Date.now()}${file.name}`
             Body: file.data,
-            ContentType: 'image/jpeg',
+            ContentType: 'image/jpeg',//will change it to dynamic content type logic
             ACL: "public-read",
           };
           const data = await s3.upload(params).promise();

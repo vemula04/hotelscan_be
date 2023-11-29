@@ -405,19 +405,21 @@ router.post('/onboard', async (req, res) => {
     }
 });
 // const nodemailer = require('nodemailer');
-
+// Not working...
 // router.post("/sendmail", async (req, res, next) => {
 //     var transport = nodemailer.createTransport({
-//         host: "sandbox.smtp.mailtrap.io",
+//         host: "smtp.elasticemail.com",
 //         port: 2525,
 //         auth: {
-//             user: "4fc722bab93a19",
-//             pass: "fddfa7bc5b41e6"
-//         }
+//             user: "karteek.v@gmail.com",
+//             pass: "A26665B531CE76F4625F8678F17EA0E49276"
+        
+//         },
+//         secure: true
 //     });
 
 //     const message = {
-//         from: "vemula04@gmail.com",
+//         from: "vemula04@hotmail.com",
 //         to: "karteek.v@gmail.com",
 //         subject: "Subject",
 //         text: "Hello SMTP Email"

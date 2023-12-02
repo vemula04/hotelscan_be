@@ -9,7 +9,7 @@ const crypto = require("crypto");
 const sendEmail = require("../utils/email");
 const config = require("../config/config");
 const Artifact = require("../models/artifact");
-
+const moment = require("moment");
 const Roles = require("../models/roles");
 
 /* GET home page. */
@@ -19,7 +19,7 @@ router.post('/onboard', async (req, res) => {
     const { name, url, primary_color, secondary_color, email } = (req.body);
     const { created_by, updated_by } = { "created_by": "122", "updated_by": "3242345" };
     try {
-        const tenant = new Tenant({ "name": name, "url": url, "primary_color": primary_color, "secondary_color": secondary_color, "email": email, "created_by": created_by });
+        const tenant = new Tenant({ "name": name, "url": url, "primary_color": primary_color, "secondary_color": secondary_color, "email": email, "created_by": created_by, created_on: moment().format()});
         const fn_tnt = await Tenant.findOne({ "email": email });
         if (!fn_tnt) {
             await tenant.save()
@@ -462,11 +462,12 @@ router.get("/getTenants", async (req, res) => {
         const query = {};
         const options = {
             // Sort returned documents in ascending order by title (A->Z)
-            sort: { name: -1 },
+
+            sort: { created_on: -1 },
             // Include only the `name` and `logo` fields in each returned document
-            projection: { _id: 0, name: 1, logo: 1 },
+            // projection: { _id: 0, name: 1, logo: 1 },
         };
-        const tenant = await Tenant.find(query);
+        const tenant = await Tenant.find(query,{},options);
         let results = [];
         tenant.forEach((value) => {
             console.log(value);
@@ -521,5 +522,63 @@ router.get("/getTenantByName", async (req, res) => {
     } catch (err) {
         res.status(400).send(err)
     }
+});
+const QRCode = require('qrcode')
+
+router.post('/generateqrcode', async function (req, res) {
+    const {tenantName, email} = req.body;
+    const url = `${config.BASE_URI}/#/${tenantName}/home`;
+    let img = await QRCode.toDataURL(url);
+    // QRCode.toDataURL(item, async function (err, url) {
+    //     await send(item, url)
+    // })
+    // let transporter = nodeMailer.createTransport({
+    //     host: 'test',
+    //     port: 587,
+    //     secure: false,
+    //     auth: {
+    //         user: 'tes',
+    //         pass: 'password'
+    //     }
+    // });
+    let mailOptions = {
+        from: '', // sender address
+        to: '', // list of receivers
+        subject: `QR Code for Tenant - ${tenantName}`, // Subject line        
+        html: `Hello ${tenantName}, 
+                <div>
+                    <h4> Please use the below QR Code </h4>
+                </div>
+                <div>
+                    <a href="${url}" target="_blank">
+                        <img src="${img}">
+                    </a>
+                </div>
+
+                <pre>
+                    Thanks,
+                    Admin Team.
+                </pre>
+                ` // html body
+        // attachments: [{ // the QR code image attached
+        //     filename: 'QR_code.png',
+        //     path: options.url,
+        // }]
+    };
+    const emailres = await sendEmail(email, mailOptions.subject, "", mailOptions.html);
+    // transporter.sendMail(mailOptions, (error, info) => {
+    //     if (error) {
+    //         return console.log(error);
+    //     }
+    //     //console.log('Message %s sent: %s', info.messageId, info.response);
+    //     res.render('index');
+    // });
+    let statusCode = 500;
+    if(emailres.success) {
+        statusCode = 200;
+    } else {
+        statusCode = 404;
+    }
+    res.send({statusCode: statusCode, data: emailres});
 });
 module.exports = router;

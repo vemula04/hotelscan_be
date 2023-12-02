@@ -5,7 +5,7 @@
  */
 //process.env => ASM(AWS Secrets Manager)
 module.exports = {
-    "BASE_URI": "http://localhost:8080",
+    "BASE_URI": "http://h-app-scanner.s3-website-ap-southeast-2.amazonaws.com",
     "CONSTANTS": { //constants declared here for entire app
         "ISMOCKENABLED": false,
         "IS_PROD": false,

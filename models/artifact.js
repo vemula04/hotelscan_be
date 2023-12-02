@@ -3,9 +3,7 @@ const mongoose = require('mongoose');
 const ArtifactsSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
-    trim: true,
-    lowercase: true,
+    required: true
   },
   item_id: {
     type: mongoose.Schema.Types.ObjectId, 
@@ -16,8 +14,7 @@ const ArtifactsSchema = new mongoose.Schema({
   url: {
     type: String,
     required: true,
-    trim: true,
-    lowercase: true,
+    trim: true
   },  
   status: {
     type: Boolean,

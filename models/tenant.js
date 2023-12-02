@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const TenantSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: true,
+    trim: true,
+    unique: true
   },
   url: {
     type: String,
@@ -20,7 +22,9 @@ const TenantSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true, 
-    unique: true
+    unique: true,
+    trim: true,
+    lowercase: true
   },
   status: {
     type: Boolean,
@@ -34,8 +38,7 @@ const TenantSchema = new mongoose.Schema({
     type: String
   },
   created_on: {
-    type: Date,
-    default: Date.now
+    type: Date
   },
   updated_on: {
     type: Date

@@ -38,8 +38,8 @@ router.post("/saveItem", async (req, res) => {
     } = req.body;
     console.log(`saveItem :: url ::`, url);
     const is_veg = true;
-    const fileExt = utils.getFileExtension(url);
-    console.log(fileExt);
+    // const fileExt = utils.getFileExtension(url);
+    // console.log(fileExt);
     // const is_video = utils.isVideoType(fileExt);
     //Item saving...
     const item = new Item({

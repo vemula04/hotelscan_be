@@ -17,6 +17,7 @@
     "mongoose": "^8.0.0",
     "morgan": "~1.9.1",
     "nodemailer": "^6.9.7",
+    "qrcode": "^1.5.3",
     "serverless-http": "^3.1.1"
   },
   "plugins": "serverless-offline",

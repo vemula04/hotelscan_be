@@ -1,48 +1,60 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
 require("../config/db");
 // const tenantModel = require("../model/tenant");
-const Tenant = require('../models/tenant');
+const Tenant = require("../models/tenant");
 const Token = require("../models/token");
-const auth = require('../middleware/auth');
+const auth = require("../middleware/auth");
 const crypto = require("crypto");
 const sendEmail = require("../utils/email");
 const config = require("../config/config");
 const Artifact = require("../models/artifact");
 const moment = require("moment");
 const Roles = require("../models/roles");
-
+const Utilities = require("../utils/utils");
 /* GET home page. */
-router.post('/onboard', async (req, res) => {
-    console.log(req.body);
+router.post("/onboard", async (req, res) => {
+  console.log(req.body);
 
-    const { name, url, primary_color, secondary_color, email } = (req.body);
-    const { created_by, updated_by } = { "created_by": "122", "updated_by": "3242345" };
-    try {
-        const tenant = new Tenant({ "name": name, "url": url, "primary_color": primary_color, "secondary_color": secondary_color, "email": email, "created_by": created_by, created_on: moment().format()});
-        const fn_tnt = await Tenant.findOne({ "email": email });
-        if (!fn_tnt) {
-            await tenant.save()
-                .then(async (data) => {
-                    console.log('Tenant Onbaroded Successfully');
-                })
-                .catch((err) => console.log(err));
-            if (tenant) {
-                const tmp_pwd = crypto.randomBytes(10).toString("hex");
-                //fetch tenant role...
-                const role = await Roles.findOne({ "name": "tenant" });
-                //save the token of a tenant...
-                const token = await new Token({
-                    tenant_id: (tenant._id).toString(),
-                    // token: crypto.randomBytes(255).toString("hex"), // for demo
-                    token: tmp_pwd,
-                    email: email,
-                    role_id: role._id
-                }).save();
-                //email template...
-                if (token) {
-                    // const message = `${config.BASE_URI}/verify/${tenant._id}/${token.token}`; commented for demo
-                    const message = `
+  const { name, url, primary_color, secondary_color, email } = req.body;
+  const { created_by, updated_by } = {
+    created_by: "122",
+    updated_by: "3242345",
+  };
+  try {
+    const tenant = new Tenant({
+      name: name,
+      url: url,
+      primary_color: primary_color,
+      secondary_color: secondary_color,
+      email: email,
+      created_by: created_by,
+      created_on: moment().format(),
+    });
+    const fn_tnt = await Tenant.findOne({ email: email });
+    if (!fn_tnt) {
+      await tenant
+        .save()
+        .then(async (data) => {
+          console.log("Tenant Onbaroded Successfully");
+        })
+        .catch((err) => console.log(err));
+      if (tenant) {
+        const tmp_pwd = crypto.randomBytes(10).toString("hex");
+        //fetch tenant role...
+        const role = await Roles.findOne({ name: "tenant" });
+        //save the token of a tenant...
+        const token = await new Token({
+          tenant_id: tenant._id.toString(),
+          // token: crypto.randomBytes(255).toString("hex"), // for demo
+          token: tmp_pwd,
+          email: email,
+          role_id: role._id,
+        }).save();
+        //email template...
+        if (token) {
+          // const message = `${config.BASE_URI}/verify/${tenant._id}/${token.token}`; commented for demo
+          const message = `
                     <html xmlns="http://www.w3.org/1999/xhtml">
                         <head>
                             <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -386,23 +398,27 @@ router.post('/onboard', async (req, res) => {
 
                         </body>
                         </html>
-                    `
-                    // console.log(`verification link :: ${message}`);
-                    await sendEmail(email, `Tenant Onbarding Credentails - ${name}`, "", message);
-                }
-                res.send({
-                    statusCode: 200,
-                    message: "Success"
-                });
-            }
-        } else {
-            res.status(500).send({ message: "Duplicate email id", statusCode: 501 })
+                    `;
+          // console.log(`verification link :: ${message}`);
+          await sendEmail(
+            email,
+            `Tenant Onbarding Credentails - ${name}`,
+            "",
+            message
+          );
         }
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).send(error);
+        res.send({
+          statusCode: 200,
+          message: "Success",
+        });
+      }
+    } else {
+      res.status(500).send({ message: "Duplicate email id", statusCode: 501 });
     }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
 });
 // const nodemailer = require('nodemailer');
 // Not working...
@@ -413,7 +429,7 @@ router.post('/onboard', async (req, res) => {
 //         auth: {
 //             user: "karteek.v@gmail.com",
 //             pass: "A26665B531CE76F4625F8678F17EA0E49276"
-        
+
 //         },
 //         secure: true
 //     });
@@ -435,117 +451,118 @@ router.post('/onboard', async (req, res) => {
 // });
 
 router.get("/verify/:id/:token", async (req, res, next) => {
-    try {
-        const tenant = await Tenant.findOne({ _id: req.params.id });
-        if (!tenant) return res.status(400).send("Invalid link");
+  try {
+    const tenant = await Tenant.findOne({ _id: req.params.id });
+    if (!tenant) return res.status(400).send("Invalid link");
 
-        const token = await Token.findOne({
-            tenant_id: tenant._id,
-            token: req.params.token,
-        });
-        if (!token) return res.status(400).send("Invalid link");
+    const token = await Token.findOne({
+      tenant_id: tenant._id,
+      token: req.params.token,
+    });
+    if (!token) return res.status(400).send("Invalid link");
 
-        await User.updateOne({ _id: user._id, verified: true });
-        await Token.findByIdAndRemove(token._id);
-        res.send("email verified sucessfully");
-
-    } catch (err) {
-        console.log("ERROR:: verify ::", err?.message);
-        res.status(401).send({ message: err?.message });
-    }
+    await User.updateOne({ _id: user._id, verified: true });
+    await Token.findByIdAndRemove(token._id);
+    res.send("email verified sucessfully");
+  } catch (err) {
+    console.log("ERROR:: verify ::", err?.message);
+    res.status(401).send({ message: err?.message });
+  }
 });
 
 router.get("/getTenants", async (req, res) => {
-    try {
+  try {
+    // Query
+    const query = {};
+    const options = {
+      // Sort returned documents in ascending order by title (A->Z)
 
-        // Query 
-        const query = {};
-        const options = {
-            // Sort returned documents in ascending order by title (A->Z)
-
-            sort: { created_on: -1 },
-            // Include only the `name` and `logo` fields in each returned document
-            // projection: { _id: 0, name: 1, logo: 1 },
-        };
-        const tenant = await Tenant.find(query,{},options);
-        let results = [];
-        tenant.forEach((value) => {
-            console.log(value);
-            results.push(value);
+      sort: { created_on: -1 },
+      // Include only the `name` and `logo` fields in each returned document
+      // projection: { _id: 0, name: 1, logo: 1 },
+    };
+    const tenant = await Tenant.find(query, {}, options);
+    let results = [];
+    tenant.forEach((value) => {
+      console.log(value);
+      results.push(value);
+    });
+    if (tenant) {
+      res
+        .send({
+          statusCode: 200,
+          data: results,
         })
-        if (tenant) {
-            res.send({
-                statusCode: 200,
-                data: results
-            }).status(200);
-        } else {
-            res.send({
-                statusCode: 502,
-                message: "No Tenants found"
-            }).status(200);
-        }
-
-    } catch (err) {
-        res.status(400).send(err)
+        .status(200);
+    } else {
+      res
+        .send({
+          statusCode: 502,
+          message: "No Tenants found",
+        })
+        .status(200);
     }
+  } catch (err) {
+    res.status(400).send(err);
+  }
 });
 router.get("/getTenantByName", async (req, res) => {
-    try {
-
-        // Query 
-        const { name } = req.query;
-        const query = { name: name };
-        const options = {
-            // Sort returned documents in ascending order by title (A->Z)
-            sort: { name: -1 },
-            // Include only the `name` and `logo` fields in each returned document
-            projection: { _id: 0, name: 1, logo: 1 },
-        };
-        const tenant = await Tenant.find(query);
-        let results = [];
-        tenant.forEach((value) => {
-            console.log(value);
-            results.push(value);
-        });
-        if (tenant) {
-            res.send({
-                statusCode: 200,
-                data: results
-            }).status(200);
-        } else {
-            res.send({
-                statusCode: 502,
-                message: `Please check tenant name <${name}>`
-            })
-        }
-
-    } catch (err) {
-        res.status(400).send(err)
+  try {
+    // Query
+    const { name } = req.query;
+    const query = { name: name };
+    const options = {
+      // Sort returned documents in ascending order by title (A->Z)
+      sort: { name: -1 },
+      // Include only the `name` and `logo` fields in each returned document
+      projection: { _id: 0, name: 1, logo: 1 },
+    };
+    const tenant = await Tenant.find(query);
+    let results = [];
+    tenant.forEach((value) => {
+      console.log(value);
+      results.push(value);
+    });
+    if (tenant) {
+      res
+        .send({
+          statusCode: 200,
+          data: results,
+        })
+        .status(200);
+    } else {
+      res.send({
+        statusCode: 502,
+        message: `Please check tenant name <${name}>`,
+      });
     }
+  } catch (err) {
+    res.status(400).send(err);
+  }
 });
-const QRCode = require('qrcode')
+const QRCode = require("qrcode");
 
-router.post('/generateqrcode', async function (req, res) {
-    const {tenantName, email} = req.body;
-    const url = `${config.BASE_URI}/#/${tenantName}/home`;
-    let img = await QRCode.toDataURL(url);
-    // QRCode.toDataURL(item, async function (err, url) {
-    //     await send(item, url)
-    // })
-    // let transporter = nodeMailer.createTransport({
-    //     host: 'test',
-    //     port: 587,
-    //     secure: false,
-    //     auth: {
-    //         user: 'tes',
-    //         pass: 'password'
-    //     }
-    // });
-    let mailOptions = {
-        from: '', // sender address
-        to: '', // list of receivers
-        subject: `QR Code for Tenant - ${tenantName}`, // Subject line        
-        html: `Hello ${tenantName}, 
+router.post("/generateqrcode", async function (req, res) {
+  const { tenantName, email } = req.body;
+  const url = `${config.BASE_URI}/#/${tenantName}/home`;
+  let img = await QRCode.toDataURL(url);
+  // QRCode.toDataURL(item, async function (err, url) {
+  //     await send(item, url)
+  // })
+  // let transporter = nodeMailer.createTransport({
+  //     host: 'test',
+  //     port: 587,
+  //     secure: false,
+  //     auth: {
+  //         user: 'tes',
+  //         pass: 'password'
+  //     }
+  // });
+  let mailOptions = {
+    from: "", // sender address
+    to: "", // list of receivers
+    subject: `QR Code for Tenant - ${tenantName}`, // Subject line
+    html: `Hello ${tenantName}, 
                 <div>
                     <h4> Please use the below QR Code </h4>
                 </div>
@@ -559,26 +576,128 @@ router.post('/generateqrcode', async function (req, res) {
                     Thanks,
                     Admin Team.
                 </pre>
-                ` // html body
-        // attachments: [{ // the QR code image attached
-        //     filename: 'QR_code.png',
-        //     path: options.url,
-        // }]
+                `, // html body
+    // attachments: [{ // the QR code image attached
+    //     filename: 'QR_code.png',
+    //     path: options.url,
+    // }]
+  };
+  const emailres = await sendEmail(
+    email,
+    mailOptions.subject,
+    "",
+    mailOptions.html
+  );
+  // transporter.sendMail(mailOptions, (error, info) => {
+  //     if (error) {
+  //         return console.log(error);
+  //     }
+  //     //console.log('Message %s sent: %s', info.messageId, info.response);
+  //     res.render('index');
+  // });
+  let statusCode = 500;
+  if (emailres.success) {
+    statusCode = 200;
+  } else {
+    statusCode = 404;
+  }
+  res.send({ statusCode: statusCode, data: emailres });
+});
+//update Tenant details...
+router.post("/updateTenant", async (req, res) => {
+  try {
+    console.log(`UpdateTenant ::`);
+
+    const {
+      _id,
+      name,
+      url,
+      primary_color,
+      secondary_color,
+      updated_by,
+    } = req.body;
+    const query = { name: name };
+    const options = {
+      // Sort returned documents in ascending order by title (A->Z)
+      sort: { name: -1 },
+      // Include only the `name` and `logo` fields in each returned document
+      // projection: { _id: 1, name: 1, logo: 1 },
     };
-    const emailres = await sendEmail(email, mailOptions.subject, "", mailOptions.html);
-    // transporter.sendMail(mailOptions, (error, info) => {
-    //     if (error) {
-    //         return console.log(error);
-    //     }
-    //     //console.log('Message %s sent: %s', info.messageId, info.response);
-    //     res.render('index');
-    // });
-    let statusCode = 500;
-    if(emailres.success) {
-        statusCode = 200;
+    let tenant = {};
+    if (name) tenant[`name`] = name;
+    if (url) tenant[`url`] = url;
+    if (primary_color) tenant[`primary_color`] = primary_color;
+    if (secondary_color) tenant[`secondary_color`] = secondary_color;
+
+    const update_tenant = {
+      ...tenant,
+      updated_by: updated_by,
+      updated_on: moment().format(),
+    };
+    console.log(update_tenant);
+    const doc = await Tenant.findByIdAndUpdate(_id, update_tenant, {
+      new: true,
+    });
+    if (doc._id) {
+      Utilities.prepareAndSendAPIResponse(res, 200, doc, "success");
     } else {
-        statusCode = 404;
+      Utilities.prepareAndSendAPIResponse(
+        res,
+        200,
+        {},
+        `No record found against the tenant "${_id}"`
+      );
     }
-    res.send({statusCode: statusCode, data: emailres});
+  } catch (err) {
+    Utilities.prepareAndSendAPIResponse(
+      res,
+      404,
+      {},
+      err?.message ? err.message : "Failed to update"
+    );
+  }
+});
+// delete a tenant or tenants...
+router.post("/deleteTenants", async (req, res) => {
+  try {
+    const { _ids, status, updated_by } = req.body;
+    console.log("deleteItem action triggered", _ids, status);
+    if (Array.isArray(_ids)) {
+      await Tenant.updateMany(
+        { _id: { $in: _ids } },
+        {
+          $set: {
+            status: status,
+            updated_by: updated_by,
+            updated_on: moment().format(),
+          },
+        },
+        { multi: true }
+      );
+      const updated_tenants = await Tenant.find({ _id: { $in: _ids } });
+      //   .select({
+      //     status: 1,
+      //     _id: 1,
+      //     tenant_id: 1,
+      //     is_special: 1,
+      //   });
+      console.log(updated_tenants);
+      Utilities.prepareAndSendAPIResponse(res, 200, updated_tenants, "success");
+    } else {
+      Utilities.prepareAndSendAPIResponse(
+        res,
+        404,
+        [],
+        "_ids - expected as an array"
+      );
+    }
+  } catch (err) {
+    Utilities.prepareAndSendAPIResponse(
+      res,
+      404,
+      {},
+      err?.message ? err.message : "deleteTenant:: Failed to update"
+    );
+  }
 });
 module.exports = router;

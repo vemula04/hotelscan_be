@@ -16,6 +16,7 @@
     "moment": "^2.29.4",
     "mongoose": "^8.0.0",
     "morgan": "~1.9.1",
+    "node-cron": "^3.0.3",
     "nodemailer": "^6.9.7",
     "qrcode": "^1.5.3",
     "serverless-http": "^3.1.1"

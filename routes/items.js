@@ -7,13 +7,26 @@ const Item = require("../models/item");
 const Artifact = require("../models/artifact");
 const path = require("path");
 const utils = require("../utils/utils");
-const moment = require("moment");
+var moment = require("moment");
 const item = require("../models/item");
+const cron = require('node-cron');
 // const auth = require('../middleware/auth');
 
 router.get("/getAllSpecials", async (req, res, next) => {
   try {
+    
+    cron.schedule('* * * * *', () => {
+      var startDate = moment("2023-11-13T11:53:56.882+00:00").format();
+      var endDate = moment();
+      var result = endDate.diff(startDate, 'days');
+      console.log('running a task every minute -- ', moment().format());
+      if(result >= 14){
+        console.log(`trigger :: email ::`);
+      }
+    });
+    res.send({message: "scheduled successfully", data: ""})
   } catch (err) {
+    
     console.log("ERROR :: getAllSpecials", err);
     res.status(400).send({ message: "Exception occurred" });
   }

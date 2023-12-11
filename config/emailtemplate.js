@@ -1,5 +1,5 @@
 module.exports = {
-    template: `
+    loadRegistrationTemplate: (emailId, pwd) => { return`
     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
 
     <!-- START HEADER/BANNER -->
@@ -662,5 +662,6 @@ module.exports = {
                             
                         
                     </tbody></table>
-    `
+    `;
+    }
 }

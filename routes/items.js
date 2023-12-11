@@ -14,12 +14,16 @@ const cron = require('node-cron');
 
 router.get("/getAllSpecials", async (req, res, next) => {
   try {
-    
-    cron.schedule('* * * * *', () => {
+    console.log(`getAllSpecials`);
+    cron.schedule('* * * * *', async () => {
+      console.log(`cron.schedule`)
       var startDate = moment("2023-11-13T11:53:56.882+00:00").format();
       var endDate = moment();
       var result = endDate.diff(startDate, 'days');
       console.log('running a task every minute -- ', moment().format());
+      console.log("before hitting mongo")
+      const items = await Item.find({status: true});
+      console.log(`items: ${items.length}`);
       if(result >= 14){
         console.log(`trigger :: email ::`);
       }

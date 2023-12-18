@@ -1,13 +1,14 @@
 const nodemailer = require("nodemailer");
 const config = require("../config/config");
 const eConfig = config.EMAIL;
+// const eConfig = config.LIVE_EMAIL;
 const sendEmail = async (email, subject, text, html) => {
   try {
     const transporter = nodemailer.createTransport({
       host: eConfig.host,
     //   service: process.env.SERVICE,
     //   port: 587,
-      port: 2525,
+      port: eConfig.port,
     //   secure: true,
       auth: {
         user: eConfig.user,

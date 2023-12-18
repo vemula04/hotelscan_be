@@ -9,28 +9,154 @@ const path = require("path");
 const utils = require("../utils/utils");
 var moment = require("moment");
 const item = require("../models/item");
-const cron = require('node-cron');
+const cron = require("node-cron");
+const sendEmail = require("../utils/email");
+const emailTempaltes = require("../config/emailtemplate");
+const Tenant = require("../models/tenant");
 // const auth = require('../middleware/auth');
+
+const prepareAndSendHTMLContent = async (item_details) => {
+  try {
+    console.log(`item_details:`, item_details);
+    let html_string = `<table class="bg_white" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr style="border-bottom: 1px solid rgba(0,0,0,.05);">
+      <th width="80%" style="text-align:left; padding: 0 2.5em; color: #000; padding-bottom: 20px">Item</th>
+      <th width="20%" style="text-align:right; padding: 0 2.5em; color: #000; padding-bottom: 20px">Price</th>
+    </tr>`;
+    for (detail of item_details) {
+      html_string += `
+      <tr style="border-bottom: 1px solid rgba(0,0,0,.05);">
+        <td valign="middle" width="80%" style="text-align:left; padding: 0 2.5em;">
+          <div class="product-entry">
+            <img src="${detail.item_image}" alt="" style="width: 100px; max-width: 600px; height: auto; margin-bottom: 20px; display: block;">
+            <div class="text">
+              <h3>${detail.name}</h3>
+              <span>Expired on:: ${moment(detail.expired_on).format('lll')}</span>
+              <p>${detail.desc}</p>
+            </div>
+          </div>
+        </td>
+        <td valign="middle" width="20%" style="text-align:left; padding: 0 2.5em;">
+          <span class="price" style="color: #000; font-size: 20px;">$${detail.price}</span>
+        </td>
+      </tr>      
+      `;
+    }
+    html_string += `<tr>
+    <td valign="middle" style="text-align:left; padding: 1em 2.5em;">
+      <p><a href="#" class="btn btn-primary">Login & Update here</a></p>
+    </td>
+  </tr>
+</table>`;
+await sendEmail("karteek.ve@gmail.com", "Items are going to be expired", "", emailTempaltes.loadExpirationTemplate(html_string));
+// return html_string;
+  } catch (err) {}
+};
 
 router.get("/getAllSpecials", async (req, res, next) => {
   try {
     console.log(`getAllSpecials`);
-    cron.schedule('* * * * *', async () => {
-      console.log(`cron.schedule`)
-      var startDate = moment("2023-11-13T11:53:56.882+00:00").format();
-      var endDate = moment();
-      var result = endDate.diff(startDate, 'days');
-      console.log('running a task every minute -- ', moment().format());
-      console.log("before hitting mongo")
-      const items = await Item.find({status: true});
+    cron.schedule("20 29 12 * * *", async () => {
+      console.log(`cron.schedule`);
+      let startDate = moment("2023-11-13T11:53:56.882+00:00").format();
+      let endDate = moment();
+      let days = endDate.diff(startDate, "days");
+      console.log("running a task every minute -- ", moment().format());
+      console.log("before hitting mongo");
+      const items = await Item.find({
+        status: true,
+        is_special: true,
+        expired_on: { $lte: moment().format() },
+      }).select({
+        status: 1,
+        name: 1,
+        is_special: 1,
+        _id: 1,
+        tenant_id: 1,
+        expired_on: 1,
+        created_on: 1,
+        item_desc: 1,
+        currency_code: 1,
+        item_price: 1,
+      });
+      // return Episode.
+      // find({ airedAt: { $gte: '1987-10-19', $lte: '1987-10-26' } }).
+      // sort({ airedAt: 1 });
       console.log(`items: ${items.length}`);
-      if(result >= 14){
-        console.log(`trigger :: email ::`);
+      // const tenant_ids = items.filter((item) => {
+      //   return item.tenant_id;
+      // });
+      if (items.length) {
+        let expired_items = [],
+          tobeexpired_items = [];
+        // console.log(`if (items.length `, items)
+        for (let item of items) {
+          // console.log(item);
+          // console.log(
+          //   `moment ${moment()} item.expired_on :: ${item.expired_on}`
+          // );
+          startDate = moment(`${item.created_on}`);
+          endDate = moment();
+          days = endDate.diff(startDate, "days");
+          console.log(`days: ${days}`);
+          if (days >= 0) {
+            const tenant_details = await Tenant.findById({
+              _id: item.tenant_id,
+            }).select({ name: 1, url: 1, email: 1 });
+            console.log(tenant_details.email);
+            let artifact = await Artifact.findById({
+              title: item.name,
+              item_id: item._id,
+            }).select({ url: 1, status: 1 });
+
+            if (days >= 1) {
+              console.log(
+                `trigger :: going to expired the items`,
+                item.expired_on
+              );
+              tobeexpired_items.push({
+                name: item.name,
+                expired_on: item.expired_on,
+                tenant_name: tenant_details.name,
+                logo: tenant_details.url,
+                desc: item.item_desc,
+                email: tenant_details.email,
+                item_image: artifact.url,
+                currency_code: item.currency_code,
+                price: item.item_price,
+              });
+              // await sendEmail(tenant_details.email,"item is going to expire soon", "", emailTempaltes.loadExpirationTemplate())
+            } else if (days == 0) {
+              console.log(
+                `trigger :: email :: ${item.name} is going to be expired today ... pls. renew the items immediately`
+              );
+              expired_items.push({
+                name: item.name,
+                expired_on: item.expired_on,
+                tenant_name: tenant_details.name,
+                logo: tenant_details.url,
+                desc: item.description,
+                email: tenant_details.email,
+                item_image: artifact.url,
+                currency_code: item.currency_code,
+                price: item.item_price,
+              });
+              // await sendEmail()
+            }
+          }
+        }
+        if (tobeexpired_items.length) {
+          prepareAndSendHTMLContent(tobeexpired_items);
+        }
+        if (expired_items.length) {
+          prepareAndSendHTMLContent(expired_items);
+        }
+      } else {
+        console.log(`no items`);
       }
     });
-    res.send({message: "scheduled successfully", data: ""})
+    res.send({ message: "scheduled successfully", data: "" });
   } catch (err) {
-    
     console.log("ERROR :: getAllSpecials", err);
     res.status(400).send({ message: "Exception occurred" });
   }

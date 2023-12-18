@@ -12,16 +12,46 @@ const Artifact = require("../models/artifact");
 const moment = require("moment");
 const Roles = require("../models/roles");
 const Utilities = require("../utils/utils");
+const TenantAddress = require("../models/tenantaddress");
 /* GET home page. */
+const saveTenantAddress = async (address, created_by, tenant_id) => {
+    return await new TenantAddress({
+        tenant_id: tenant_id,
+        address: address.address,
+        country: address.country,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+        created_by: created_by,
+        created_on: moment().format(),
+      }).save();
+}
 router.post("/onboard", async (req, res) => {
   console.log(req.body);
 
-  const { name, url, primary_color, secondary_color, email } = req.body;
-  const { created_by, updated_by } = {
-    created_by: "122",
+  const {
+    name,
+    url,
+    primary_color,
+    secondary_color,
+    email,
+    address,
+    country,
+    city,
+    state,
+    postalCode,
+    created_by,
+    business_url
+  } = req.body;
+  const { updated_by } = {
     updated_by: "3242345",
   };
   try {
+    // address: "",
+    // country: "",
+    // city: "",
+    // state: "",
+    // postalCode: "",
     const tenant = new Tenant({
       name: name,
       url: url,
@@ -30,6 +60,7 @@ router.post("/onboard", async (req, res) => {
       email: email,
       created_by: created_by,
       created_on: moment().format(),
+      business_url: business_url
     });
     const fn_tnt = await Tenant.findOne({ email: email });
     if (!fn_tnt) {
@@ -51,8 +82,14 @@ router.post("/onboard", async (req, res) => {
           email: email,
           role_id: role._id,
         }).save();
+        //address save...        
+        const tAddress = await saveTenantAddress({address,
+            country,
+            city,
+            state,
+            postalCode}, created_by, tenant._id)
         //email template...
-        if (token) {
+        if (token && tAddress) {
           // const message = `${config.BASE_URI}/verify/${tenant._id}/${token.token}`; commented for demo
           const message = `
                     <html xmlns="http://www.w3.org/1999/xhtml">
@@ -420,35 +457,74 @@ router.post("/onboard", async (req, res) => {
     res.status(500).send(error);
   }
 });
+const axios = require('axios');
+
+async function sendEmail_(name, email, subject, message) {
+  const data = JSON.stringify({
+    "Messages": [{
+      "From": {"Email": "karteek.v@gmail.com", "Name": "Karteek"},
+      "To": [{"Email": email, "Name": name}],
+      "Subject": subject,
+      "TextPart": message
+    }]
+  });
+
+  const config = {
+    method: 'post',
+    url: 'https://api.mailjet.com/v3.1/send',
+    data: data,
+    headers: {'Content-Type': 'application/json'},
+    auth: {username: 'f6351d11e0de8790d034964e727f04e9', password: '6fe08fc6b8b79f0a8e71d8cf5f909b8c'},
+  };
+
+  await axios.post(config.url, config.data, {
+    auth: {username: 'f6351d11e0de8790d034964e727f04e9', password: '6fe08fc6b8b79f0a8e71d8cf5f909b8c'}
+  })
+  // return axios(config)
+  //   .then(function (response) {
+  //     console.log(JSON.stringify(response.data));
+  //   })
+  //   .catch(function (error) {
+  //     console.log(error);
+  //   });
+
+}
 // const nodemailer = require('nodemailer');
 // Not working...
-// router.post("/sendmail", async (req, res, next) => {
-//     var transport = nodemailer.createTransport({
-//         host: "smtp.elasticemail.com",
-//         port: 2525,
-//         auth: {
-//             user: "karteek.v@gmail.com",
-//             pass: "A26665B531CE76F4625F8678F17EA0E49276"
+router.post("/sendmail", async (req, res, next) => {
+  // await sendEmail(
+  //   "karteek.v@gmail.com",
+  //   `Tenant Onbarding Credentails`,
+  //   "",
+  //   "<p>Successfully sent</p>"
+  // );
+    // var transport = nodemailer.createTransport({
+    //     host: "live.smtp.mailtrap.io",
+    //     port: 587,
+    //     auth: {
+    //         user: "api",
+    //         pass: "8f337e58054f6e751822b50cb777e90c"
 
-//         },
-//         secure: true
-//     });
+    //     },
+    //     secure: true
+    // });
 
-//     const message = {
-//         from: "vemula04@hotmail.com",
-//         to: "karteek.v@gmail.com",
-//         subject: "Subject",
-//         text: "Hello SMTP Email"
-//     }
+    // const message = {
+    //     from: "vemula04@hotmail.com",
+    //     to: "karteek.v@gmail.com",
+    //     subject: "Subject",
+    //     text: "Hello SMTP Email"
+    // }
 
-//     transport.sendMail(message, (err, info) => {
-//         if (err) {
-//             console.log(err)
-//         } else {
-//             console.log(info);
-//         }
-//     });
-// });
+    // transport.sendMail(message, (err, info) => {
+    //     if (err) {
+    //         console.log(err)
+    //     } else {
+    //         console.log(info);
+    //     }
+    // });
+    sendEmail_("Karteek Vemula", "vemula04@hotmail.com", "Testing", "Testing mail");
+});
 
 router.get("/verify/:id/:token", async (req, res, next) => {
   try {
@@ -518,16 +594,20 @@ router.get("/getTenantByName", async (req, res) => {
       projection: { _id: 0, name: 1, logo: 1 },
     };
     const tenant = await Tenant.find(query);
+    // console.log(`tenant id:: `, tenant[0]._id)
+    const tenant_details = await TenantAddress.findOne({tenant_id: tenant[0]?._id});
+    console.log(`tenant_details:: `, tenant_details);
     let results = [];
     tenant.forEach((value) => {
       console.log(value);
       results.push(value);
     });
+    
     if (tenant) {
       res
         .send({
           statusCode: 200,
-          data: results,
+          data: {results, tenant_details},
         })
         .status(200);
     } else {

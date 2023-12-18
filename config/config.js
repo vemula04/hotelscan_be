@@ -23,5 +23,12 @@ module.exports = {
         "port": 2525,
         "host": "sandbox.smtp.mailtrap.io",
         "from": "vemula04@gmail.com"
+    },
+    "LIVE_EMAIL": {
+        "host": "live.smtp.mailtrap.io",
+        "port": 587, //(recommended), 2525 or 25
+        "user": "api",
+        "pass": "8f337e58054f6e751822b50cb777e90c",
+        
     }
 }

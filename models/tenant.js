@@ -31,8 +31,7 @@ const TenantSchema = new mongoose.Schema({
     default: 1
   },
   created_by: {
-    type: String,
-    required: true
+    type: String
   },
   updated_by: {
     type: String
@@ -46,6 +45,11 @@ const TenantSchema = new mongoose.Schema({
   currency_code: {
     type: String,
     default: "AUD"
+  },
+  business_url: {
+    type: String,
+    default: "",
+    trim: true
   }
 });
 

@@ -26,9 +26,10 @@ module.exports = {
     },
     "LIVE_EMAIL": {
         "host": "live.smtp.mailtrap.io",
-        "port": 587, //(recommended), 2525 or 25
+        "port": 587, // (recommended), 2525 or 25
         "user": "api",
-        "pass": "8f337e58054f6e751822b50cb777e90c",
+        "pass": "c3020d53ff7de801c5156a92affbce30",
+        "from": "mailtrap@medhatech.com.au"
         
     }
 }

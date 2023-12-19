@@ -14,21 +14,30 @@ router.post('/login', async (req, res) => {
   const token = await Token.findOne({
     email: email,
     token: password,
-  });
+  });  
   if (!token) return res.status(400).send("Invalid credentails");
+  if(token.role_id){
+    const role = await Role.findOne({_id: token.role_id});
+    let tenant_details = {};
+    if(role?.name && role.name == "superadmin"){ //superadmin role...
+      tenant_details = {};
+    } else { //tenant role
+      tenant_details = await Tenant.findOne({
+        _id: token.tenant_id
+      });
+    }    
+    const user_details = {
+      role: role.name,
+      tenant: tenant_details
+    };
+    if (!tenant_details) return res.status(502).send("Tenant not exist");
+    //if tenant exist...
+    
+    res.send(user_details);
+  }
+  
 
-  const tenant_details = await Tenant.findOne({
-    _id: token.tenant_id
-  });
-
-  if (!tenant_details) return res.status(502).send("Tenant not exist");
-  //if tenant exist...
-  const role = await Role.findOne({_id: token.role_id});
-  const user_details = {
-    role: role.name,
-    tenant: tenant_details
-  };
-  res.send(user_details);
+  
 
   // res.send('respond with a resource');
 });

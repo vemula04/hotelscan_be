@@ -9,7 +9,7 @@ const sendEmail = async (email, subject, text, html) => {
     //   service: process.env.SERVICE,
     //   port: 587,
       port: eConfig.port,
-    //   secure: true,
+      // secure: true,
       auth: {
         user: eConfig.user,
         pass: eConfig.pass,

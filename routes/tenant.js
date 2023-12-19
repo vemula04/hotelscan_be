@@ -15,17 +15,17 @@ const Utilities = require("../utils/utils");
 const TenantAddress = require("../models/tenantaddress");
 /* GET home page. */
 const saveTenantAddress = async (address, created_by, tenant_id) => {
-    return await new TenantAddress({
-        tenant_id: tenant_id,
-        address: address.address,
-        country: address.country,
-        city: address.city,
-        state: address.state,
-        postalCode: address.postalCode,
-        created_by: created_by,
-        created_on: moment().format(),
-      }).save();
-}
+  return await new TenantAddress({
+    tenant_id: tenant_id,
+    address: address.address,
+    country: address.country,
+    city: address.city,
+    state: address.state,
+    postalCode: address.postalCode,
+    created_by: created_by,
+    created_on: moment().format(),
+  }).save();
+};
 router.post("/onboard", async (req, res) => {
   console.log(req.body);
 
@@ -41,7 +41,7 @@ router.post("/onboard", async (req, res) => {
     state,
     postalCode,
     created_by,
-    business_url
+    business_url,
   } = req.body;
   const { updated_by } = {
     updated_by: "3242345",
@@ -60,7 +60,7 @@ router.post("/onboard", async (req, res) => {
       email: email,
       created_by: created_by,
       created_on: moment().format(),
-      business_url: business_url
+      business_url: business_url,
     });
     const fn_tnt = await Tenant.findOne({ email: email });
     if (!fn_tnt) {
@@ -82,12 +82,12 @@ router.post("/onboard", async (req, res) => {
           email: email,
           role_id: role._id,
         }).save();
-        //address save...        
-        const tAddress = await saveTenantAddress({address,
-            country,
-            city,
-            state,
-            postalCode}, created_by, tenant._id)
+        //address save...
+        const tAddress = await saveTenantAddress(
+          { address, country, city, state, postalCode },
+          created_by,
+          tenant._id
+        );
         //email template...
         if (token && tAddress) {
           // const message = `${config.BASE_URI}/verify/${tenant._id}/${token.token}`; commented for demo
@@ -457,29 +457,37 @@ router.post("/onboard", async (req, res) => {
     res.status(500).send(error);
   }
 });
-const axios = require('axios');
+const axios = require("axios");
 
 async function sendEmail_(name, email, subject, message) {
   const data = JSON.stringify({
-    "Messages": [{
-      "From": {"Email": "karteek.v@gmail.com", "Name": "Karteek"},
-      "To": [{"Email": email, "Name": name}],
-      "Subject": subject,
-      "TextPart": message
-    }]
+    Messages: [
+      {
+        From: { Email: "karteek.v@gmail.com", Name: "Karteek" },
+        To: [{ Email: email, Name: name }],
+        Subject: subject,
+        TextPart: message,
+      },
+    ],
   });
 
   const config = {
-    method: 'post',
-    url: 'https://api.mailjet.com/v3.1/send',
+    method: "post",
+    url: "https://api.mailjet.com/v3.1/send",
     data: data,
-    headers: {'Content-Type': 'application/json'},
-    auth: {username: 'f6351d11e0de8790d034964e727f04e9', password: '6fe08fc6b8b79f0a8e71d8cf5f909b8c'},
+    headers: { "Content-Type": "application/json" },
+    auth: {
+      username: "f6351d11e0de8790d034964e727f04e9",
+      password: "6fe08fc6b8b79f0a8e71d8cf5f909b8c",
+    },
   };
 
   await axios.post(config.url, config.data, {
-    auth: {username: 'f6351d11e0de8790d034964e727f04e9', password: '6fe08fc6b8b79f0a8e71d8cf5f909b8c'}
-  })
+    auth: {
+      username: "f6351d11e0de8790d034964e727f04e9",
+      password: "6fe08fc6b8b79f0a8e71d8cf5f909b8c",
+    },
+  });
   // return axios(config)
   //   .then(function (response) {
   //     console.log(JSON.stringify(response.data));
@@ -487,10 +495,11 @@ async function sendEmail_(name, email, subject, message) {
   //   .catch(function (error) {
   //     console.log(error);
   //   });
-
 }
 // const nodemailer = require('nodemailer');
 // Not working...
+const { MailtrapClient } = require("mailtrap");
+
 router.post("/sendmail", async (req, res, next) => {
   // await sendEmail(
   //   "karteek.v@gmail.com",
@@ -498,32 +507,58 @@ router.post("/sendmail", async (req, res, next) => {
   //   "",
   //   "<p>Successfully sent</p>"
   // );
-    // var transport = nodemailer.createTransport({
-    //     host: "live.smtp.mailtrap.io",
-    //     port: 587,
-    //     auth: {
-    //         user: "api",
-    //         pass: "8f337e58054f6e751822b50cb777e90c"
+  // var transport = nodemailer.createTransport({
+  //     host: "live.smtp.mailtrap.io",
+  //     port: 587,
+  //     auth: {
+  //         user: "api",
+  //         pass: "8f337e58054f6e751822b50cb777e90c"
 
-    //     },
-    //     secure: true
-    // });
+  //     },
+  //     secure: true
+  // });
 
-    // const message = {
-    //     from: "vemula04@hotmail.com",
-    //     to: "karteek.v@gmail.com",
-    //     subject: "Subject",
-    //     text: "Hello SMTP Email"
-    // }
+  // const message = {
+  //     from: "vemula04@hotmail.com",
+  //     to: "karteek.v@gmail.com",
+  //     subject: "Subject",
+  //     text: "Hello SMTP Email"
+  // }
 
-    // transport.sendMail(message, (err, info) => {
-    //     if (err) {
-    //         console.log(err)
-    //     } else {
-    //         console.log(info);
-    //     }
-    // });
-    sendEmail_("Karteek Vemula", "vemula04@hotmail.com", "Testing", "Testing mail");
+  // transport.sendMail(message, (err, info) => {
+  //     if (err) {
+  //         console.log(err)
+  //     } else {
+  //         console.log(info);
+  //     }
+  // });
+
+  // const TOKEN = "c3020d53ff7de801c5156a92affbce30";
+  // const ENDPOINT = "https://send.api.mailtrap.io/";
+
+  // const client = new MailtrapClient({ endpoint: ENDPOINT, token: TOKEN });
+
+  // const sender = {
+  //   email: "mailtrap@medhatech.com.au",
+  //   name: "Mailtrap Test",
+  // };
+  // const recipients = [
+  //   {
+  //     email: "karteek.v@gmail.com",
+  //   },
+  // ];
+
+  // client
+  //   .send({
+  //     from: sender,
+  //     to: recipients,
+  //     subject: "You are awesome!",
+  //     text: "Congrats for sending test email with Mailtrap!",
+  //     category: "Integration Test",
+  //   })
+  //   .then(console.log, console.error);
+
+  sendEmail("karteek.v@gmail.com", "Testing the live mail...", "Testing", "<h1>Testing the live mail..</h1>");
 });
 
 router.get("/verify/:id/:token", async (req, res, next) => {
@@ -595,19 +630,21 @@ router.get("/getTenantByName", async (req, res) => {
     };
     const tenant = await Tenant.find(query);
     // console.log(`tenant id:: `, tenant[0]._id)
-    const tenant_details = await TenantAddress.findOne({tenant_id: tenant[0]?._id});
+    const tenant_details = await TenantAddress.findOne({
+      tenant_id: tenant[0]?._id,
+    });
     console.log(`tenant_details:: `, tenant_details);
     let results = [];
     tenant.forEach((value) => {
       console.log(value);
       results.push(value);
     });
-    
+
     if (tenant) {
       res
         .send({
           statusCode: 200,
-          data: {results, tenant_details},
+          data: { results, tenant_details },
         })
         .status(200);
     } else {

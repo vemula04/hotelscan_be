@@ -1,7 +1,8 @@
 const nodemailer = require("nodemailer");
 const config = require("../config/config");
-const eConfig = config.EMAIL;
-// const eConfig = config.LIVE_EMAIL;
+// const eConfig = config.EMAIL;
+const eConfig = config.LIVE_EMAIL;
+// const eConfig = config.ZOHO_MAIL;
 const sendEmail = async (email, subject, text, html) => {
   try {
     const transporter = nodemailer.createTransport({

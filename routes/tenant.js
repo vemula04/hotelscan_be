@@ -13,6 +13,7 @@ const moment = require("moment");
 const Roles = require("../models/roles");
 const Utilities = require("../utils/utils");
 const TenantAddress = require("../models/tenantaddress");
+const emailTempaltes = require("../config/emailtemplate");
 /* GET home page. */
 const saveTenantAddress = async (address, created_by, tenant_id) => {
   return await new TenantAddress({
@@ -496,7 +497,7 @@ async function sendEmail_(name, email, subject, message) {
   //     console.log(error);
   //   });
 }
-// const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 // Not working...
 const { MailtrapClient } = require("mailtrap");
 
@@ -508,18 +509,18 @@ router.post("/sendmail", async (req, res, next) => {
   //   "<p>Successfully sent</p>"
   // );
   // var transport = nodemailer.createTransport({
-  //     host: "live.smtp.mailtrap.io",
-  //     port: 587,
-  //     auth: {
-  //         user: "api",
-  //         pass: "8f337e58054f6e751822b50cb777e90c"
-
-  //     },
+  //   host: "email-smtp.ap-southeast-2.amazonaws.com",
+  //   secure: true,
+  //   port: 465,
+  //   auth: {
+  //     user: "AKIAWTH4J746LX6C77OX",
+  //     pass: "BO3u39XiDO6tSZnqvU40qu23fCRVmNtugRik5wJDJVlM",
+  //   },
   //     secure: true
   // });
 
   // const message = {
-  //     from: "vemula04@hotmail.com",
+  //     from: "karteek.v@gmail.com",
   //     to: "karteek.v@gmail.com",
   //     subject: "Subject",
   //     text: "Hello SMTP Email"
@@ -558,7 +559,12 @@ router.post("/sendmail", async (req, res, next) => {
   //   })
   //   .then(console.log, console.error);
 
-  sendEmail("karteek.v@gmail.com", "Testing the live mail...", "Testing", "<h1>Testing the live mail..</h1>");
+  sendEmail(
+    "ratna536@gmail.com",
+    "Testing the live mail from scanner app...",
+    "Testing",
+    "<h1>Testing the live mail..</h1>"
+  );
 });
 
 router.get("/verify/:id/:token", async (req, res, next) => {
@@ -592,7 +598,7 @@ router.get("/getTenants", async (req, res) => {
       // Include only the `name` and `logo` fields in each returned document
       // projection: { _id: 0, name: 1, logo: 1 },
     };
-    const tenant = await Tenant.find(query, {}, options);
+    const tenant = await Tenant.find(query, {}, options);    
     let results = [];
     tenant.forEach((value) => {
       console.log(value);
@@ -617,6 +623,29 @@ router.get("/getTenants", async (req, res) => {
     res.status(400).send(err);
   }
 });
+router.get("/getTenantAddressByTenantId", async (req, res) => {
+  try {
+    const { tenant_id } = req.query;
+    const query = { tenant_id: tenant_id };
+    const tenant_details = await TenantAddress.findOne(query);
+    console.log(`tenant_details:: `, tenant_details);
+    if (tenant_details) {
+      res
+        .send({
+          statusCode: 200,
+          data: tenant_details,
+        })
+        .status(200);
+    } else {
+      res.send({
+        statusCode: 502,
+        message: `Please check tenant Id`,
+      });
+    }
+  } catch (err) {
+    res.status(400).send(err?.message);
+  }
+});
 router.get("/getTenantByName", async (req, res) => {
   try {
     // Query
@@ -639,12 +668,11 @@ router.get("/getTenantByName", async (req, res) => {
       console.log(value);
       results.push(value);
     });
-
     if (tenant) {
       res
         .send({
           statusCode: 200,
-          data: { results, tenant_details },
+          data: results,
         })
         .status(200);
     } else {
@@ -679,26 +707,9 @@ router.post("/generateqrcode", async function (req, res) {
     from: "", // sender address
     to: "", // list of receivers
     subject: `QR Code for Tenant - ${tenantName}`, // Subject line
-    html: `Hello ${tenantName}, 
-                <div>
-                    <h4> Please use the below QR Code </h4>
-                </div>
-                <div>
-                    <a href="${url}" target="_blank">
-                        <img src="${img}">
-                    </a>
-                </div>
-
-                <pre>
-                    Thanks,
-                    Admin Team.
-                </pre>
-                `, // html body
-    // attachments: [{ // the QR code image attached
-    //     filename: 'QR_code.png',
-    //     path: options.url,
-    // }]
+    html: emailTempaltes.loadQRCodeTemplate(tenantName, url, img), // html body   
   };
+  // console.log(mailOptions.html);
   const emailres = await sendEmail(
     email,
     mailOptions.subject,

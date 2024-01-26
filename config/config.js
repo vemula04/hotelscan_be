@@ -28,8 +28,18 @@ module.exports = {
         "host": "live.smtp.mailtrap.io",
         "port": 587, // (recommended), 2525 or 25
         "user": "api",
-        "pass": "c3020d53ff7de801c5156a92affbce30",
-        "from": "mailtrap@medhatech.com.au"
+        "pass": "c89a7988f1fcf1694c4421754bcadc4a",
+        "from": "mailtrap@stealdeals.com.au"
         
+    },
+    // Port: 465
+// Security Type: SSL 
+// Require Authentication: Yes. 
+    "ZOHO_MAIL": {
+        "host": "smtp.zoho.in",
+        "port": 465,
+        "user": "karteek.v@zohomail.in",
+        "pass": "Ujmyhn%4321",
+        "from": "karteek.v@zohomail.in"
     }
 }

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "dependencies": {
+    "@zohocrm/nodejs-sdk-2.0": "^6.1.0",
     "aws-sdk": "^2.1503.0",
     "axios": "^1.6.2",
     "body-parser": "^1.20.2",
@@ -28,6 +29,6 @@
     "serverless-offline": "^13.2.0"
   },
   "scripts": {
-    "start": "npm i & node ./bin/www"
+    "start": "node ./bin/www"
   }
 }

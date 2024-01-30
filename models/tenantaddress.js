@@ -36,6 +36,9 @@ const tenantAddressSchema = new mongoose.Schema({
   updated_on: {
     type: Date,
   },
+  contact: {
+    type: String
+  }
 });
 
 const tenantAddress = mongoose.model("tenant_address", tenantAddressSchema);

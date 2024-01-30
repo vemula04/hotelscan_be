@@ -15,7 +15,7 @@ const Utilities = require("../utils/utils");
 const TenantAddress = require("../models/tenantaddress");
 const emailTempaltes = require("../config/emailtemplate");
 /* GET home page. */
-const saveTenantAddress = async (address, created_by, tenant_id) => {
+const saveTenantAddress = async (address, created_by, tenant_id, contact) => {
   return await new TenantAddress({
     tenant_id: tenant_id,
     address: address.address,
@@ -25,6 +25,7 @@ const saveTenantAddress = async (address, created_by, tenant_id) => {
     postalCode: address.postalCode,
     created_by: created_by,
     created_on: moment().format(),
+    contact: contact
   }).save();
 };
 router.post("/onboard", async (req, res) => {
@@ -43,6 +44,7 @@ router.post("/onboard", async (req, res) => {
     postalCode,
     created_by,
     business_url,
+    contact
   } = req.body;
   const { updated_by } = {
     updated_by: "3242345",
@@ -85,7 +87,7 @@ router.post("/onboard", async (req, res) => {
         }).save();
         //address save...
         const tAddress = await saveTenantAddress(
-          { address, country, city, state, postalCode },
+          { address, country, city, state, postalCode, contact },
           created_by,
           tenant._id
         );

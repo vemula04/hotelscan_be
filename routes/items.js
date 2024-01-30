@@ -13,50 +13,69 @@ const cron = require("node-cron");
 const sendEmail = require("../utils/email");
 const emailTempaltes = require("../config/emailtemplate");
 const Tenant = require("../models/tenant");
+const { config } = require("../config/config");
 // const auth = require('../middleware/auth');
 
-const prepareAndSendHTMLContent = async (item_details) => {
+const prepareAndSendHTMLContent = async (item_details, item_details_obj) => {
   try {
-    console.log(`item_details:`, item_details);
-    let html_string = `<table class="bg_white" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+    const baseURL = "http://h-app-scanner.s3-website-ap-southeast-2.amazonaws.com";
+    console.log(`item_details_obj ------`, Object.keys(item_details_obj));
+    for (let x in item_details_obj) {
+      // console.log("=========", item_details_obj[x]);
+      // console.log(`item_details:`, item_details);
+      let html_string = `<table class="bg_white" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
     <tr style="border-bottom: 1px solid rgba(0,0,0,.05);">
       <th width="80%" style="text-align:left; padding: 0 2.5em; color: #000; padding-bottom: 20px">Item</th>
       <th width="20%" style="text-align:right; padding: 0 2.5em; color: #000; padding-bottom: 20px">Price</th>
     </tr>`;
-    for (detail of item_details) {
-      html_string += `
+      for (detail of item_details_obj[x]) {
+        html_string += `
       <tr style="border-bottom: 1px solid rgba(0,0,0,.05);">
         <td valign="middle" width="80%" style="text-align:left; padding: 0 2.5em;">
           <div class="product-entry">
-            <img src="${detail.item_image}" alt="" style="width: 100px; max-width: 600px; height: auto; margin-bottom: 20px; display: block;">
+            <img src="${
+              detail.item_image
+            }" alt="" style="width: 100px; max-width: 600px; height: auto; margin-bottom: 20px; display: block;">
             <div class="text">
               <h3>${detail.name}</h3>
-              <span>Expired on:: ${moment(detail.expired_on).format('lll')}</span>
+              <span>Expired on:: ${moment(detail.expired_on).format(
+                "lll"
+              )}</span>
               <p>${detail.desc}</p>
             </div>
           </div>
         </td>
         <td valign="middle" width="20%" style="text-align:left; padding: 0 2.5em;">
-          <span class="price" style="color: #000; font-size: 20px;">$${detail.price}</span>
+          <span class="price" style="color: #000; font-size: 20px;">$${
+            detail.price
+          }</span>
         </td>
       </tr>      
       `;
+      }
+      html_string += `</table>`;
+//       html_string += `<tr>
+//     <td valign="middle" style="text-align:left; padding: 1em 2.5em;">
+//       <p><a href="${baseURL}/#/" class="btn btn-primary">Login & Update here</a></p>
+//     </td>
+//   </tr>
+// </table>`;
+      await sendEmail(
+        x,
+        "Items are going to be expired",
+        "",
+        emailTempaltes.loadExpirationTemplate(html_string)
+      );
     }
-    html_string += `<tr>
-    <td valign="middle" style="text-align:left; padding: 1em 2.5em;">
-      <p><a href="#" class="btn btn-primary">Login & Update here</a></p>
-    </td>
-  </tr>
-</table>`;
-await sendEmail("karteek.ve@gmail.com", "Items are going to be expired", "", emailTempaltes.loadExpirationTemplate(html_string));
-// return html_string;
+
+    // return html_string;
   } catch (err) {}
 };
 
 router.get("/getAllSpecials", async (req, res, next) => {
   try {
     console.log(`getAllSpecials`);
-    cron.schedule("20 29 12 * * *", async () => {
+    cron.schedule("10 13 01 * * *", async () => {
       console.log(`cron.schedule`);
       let startDate = moment("2023-11-13T11:53:56.882+00:00").format();
       let endDate = moment();
@@ -89,6 +108,8 @@ router.get("/getAllSpecials", async (req, res, next) => {
       if (items.length) {
         let expired_items = [],
           tobeexpired_items = [];
+        let tobeexpired_items_ = {},
+          expired_items_ = {};
         // console.log(`if (items.length `, items)
         for (let item of items) {
           // console.log(item);
@@ -104,10 +125,10 @@ router.get("/getAllSpecials", async (req, res, next) => {
               _id: item.tenant_id,
             }).select({ name: 1, url: 1, email: 1 });
             console.log(tenant_details.email);
-            let artifact = await Artifact.findById({
-              title: item.name,
-              item_id: item._id,
-            }).select({ url: 1, status: 1 });
+            // let artifact = await Artifact.findById({
+            //   title: item.name,
+            //   item_id: item._id,
+            // }).select({ url: 1, status: 1 });
 
             if (days >= 1) {
               console.log(
@@ -121,7 +142,21 @@ router.get("/getAllSpecials", async (req, res, next) => {
                 logo: tenant_details.url,
                 desc: item.item_desc,
                 email: tenant_details.email,
-                item_image: artifact.url,
+                item_image: "",
+                currency_code: item.currency_code,
+                price: item.item_price,
+              });
+              if (!tobeexpired_items_[`${tenant_details.email}`]) {
+                tobeexpired_items_[`${tenant_details.email}`] = [];
+              }
+              tobeexpired_items_[`${tenant_details.email}`].push({
+                name: item.name,
+                expired_on: item.expired_on,
+                tenant_name: tenant_details.name,
+                logo: tenant_details.url,
+                desc: item.item_desc,
+                email: tenant_details.email,
+                item_image: "",
                 currency_code: item.currency_code,
                 price: item.item_price,
               });
@@ -137,7 +172,21 @@ router.get("/getAllSpecials", async (req, res, next) => {
                 logo: tenant_details.url,
                 desc: item.description,
                 email: tenant_details.email,
-                item_image: artifact.url,
+                item_image: "",
+                currency_code: item.currency_code,
+                price: item.item_price,
+              });
+              if (!expired_items_[`${tenant_details.email}`]) {
+                expired_items_[`${tenant_details.email}`] = [];
+              }
+              expired_items_.push({
+                name: item.name,
+                expired_on: item.expired_on,
+                tenant_name: tenant_details.name,
+                logo: tenant_details.url,
+                desc: item.description,
+                email: tenant_details.email,
+                item_image: "",
                 currency_code: item.currency_code,
                 price: item.item_price,
               });
@@ -146,10 +195,10 @@ router.get("/getAllSpecials", async (req, res, next) => {
           }
         }
         if (tobeexpired_items.length) {
-          prepareAndSendHTMLContent(tobeexpired_items);
+          prepareAndSendHTMLContent(tobeexpired_items, tobeexpired_items_);
         }
         if (expired_items.length) {
-          prepareAndSendHTMLContent(expired_items);
+          prepareAndSendHTMLContent(expired_items, expired_items_);
         }
       } else {
         console.log(`no items`);
@@ -178,9 +227,9 @@ router.post("/saveItem", async (req, res) => {
       expired_on,
       created_by,
       spicy_level,
+      is_veg,
     } = req.body;
     console.log(`saveItem :: url ::`, url);
-    const is_veg = true;
     // const fileExt = utils.getFileExtension(url);
     // console.log(fileExt);
     // const is_video = utils.isVideoType(fileExt);
@@ -338,9 +387,9 @@ router.post("/updateItem", async (req, res) => {
       expired_on,
       spicy_level,
       updated_by,
+      is_veg,
     } = req.body;
     console.log(`saveItem :: url ::`, url);
-    const is_veg = true;
     // const fileExt = utils.getFileExtension(url);
     // console.log(fileExt);
     // const is_video = utils.isVideoType(fileExt);

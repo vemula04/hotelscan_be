@@ -9,12 +9,15 @@ const Role = require('../models/roles');
 /* GET link verification. */
 router.post('/login', async (req, res) => {
   console.log(req.body);
-  const { email, password } = (req.body);
+  const { email, password, tenant_id } = (req.body);
+ let query = {
+  email: email,
+  token: password,
+  tenant_id: tenant_id
+};
 
-  const token = await Token.findOne({
-    email: email,
-    token: password,
-  });  
+console.log(`query ====> `, query)
+  const token = await Token.findOne(query);  
   if (!token) return res.status(400).send("Invalid credentails");
   if(token.role_id){
     const role = await Role.findOne({_id: token.role_id});

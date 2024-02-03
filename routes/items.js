@@ -19,7 +19,8 @@ const { config } = require("../config/config");
 const prepareAndSendHTMLContent = async (item_details, item_details_obj) => {
   try {
     const baseURL = "http://h-app-scanner.s3-website-ap-southeast-2.amazonaws.com";
-    console.log(`item_details_obj ------`, Object.keys(item_details_obj));
+    console.log(`prepareAndSendHTMLContent :: item_details_obj ------`);
+    
     for (let x in item_details_obj) {
       // console.log("=========", item_details_obj[x]);
       // console.log(`item_details:`, item_details);
@@ -74,8 +75,9 @@ const prepareAndSendHTMLContent = async (item_details, item_details_obj) => {
 
 router.get("/getAllSpecials", async (req, res, next) => {
   try {
-    console.log(`getAllSpecials`);
-    cron.schedule("10 13 01 * * *", async () => {
+    console.log(`FindOut the Expired items of each tenant :: ====JOB Scheduled successfully...`);
+    // cron.schedule("secs mins hours * * *")...
+    cron.schedule("00 00 18 * * *", async () => {
       console.log(`cron.schedule`);
       let startDate = moment("2023-11-13T11:53:56.882+00:00").format();
       let endDate = moment();
@@ -165,6 +167,9 @@ router.get("/getAllSpecials", async (req, res, next) => {
               console.log(
                 `trigger :: email :: ${item.name} is going to be expired today ... pls. renew the items immediately`
               );
+              try{
+
+              
               expired_items.push({
                 name: item.name,
                 expired_on: item.expired_on,
@@ -176,10 +181,12 @@ router.get("/getAllSpecials", async (req, res, next) => {
                 currency_code: item.currency_code,
                 price: item.item_price,
               });
+              console.log("<<<<<<after pushing 0000000000000...");
               if (!expired_items_[`${tenant_details.email}`]) {
                 expired_items_[`${tenant_details.email}`] = [];
               }
-              expired_items_.push({
+              console.log("<<<<<<after pushing 11111111111...");
+              expired_items_[`${tenant_details.email}`].push({
                 name: item.name,
                 expired_on: item.expired_on,
                 tenant_name: tenant_details.name,
@@ -190,11 +197,21 @@ router.get("/getAllSpecials", async (req, res, next) => {
                 currency_code: item.currency_code,
                 price: item.item_price,
               });
+              console.log("<<<<<<after pushing 2222222...");
+            } catch (err) {
+                console.log("Exception in foreach .....>>>", err);
+                console.error(err)
+            }
               // await sendEmail()
             }
           }
+
         }
+        console.log("tobeexpired_items.length =========> ", tobeexpired_items.length);
+        console.log("expired_items.length =========> ", expired_items.length);
+
         if (tobeexpired_items.length) {
+
           prepareAndSendHTMLContent(tobeexpired_items, tobeexpired_items_);
         }
         if (expired_items.length) {
@@ -207,7 +224,7 @@ router.get("/getAllSpecials", async (req, res, next) => {
     res.send({ message: "scheduled successfully", data: "" });
   } catch (err) {
     console.log("ERROR :: getAllSpecials", err);
-    res.status(400).send({ message: "Exception occurred" });
+    // res.status(400).send({ message: "Exception occurred" });
   }
 });
 

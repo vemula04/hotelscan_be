@@ -37,7 +37,8 @@ const tenantAddressSchema = new mongoose.Schema({
     type: Date,
   },
   contact: {
-    type: String
+    type: String,
+    default:""
   }
 });
 

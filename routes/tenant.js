@@ -16,6 +16,7 @@ const TenantAddress = require("../models/tenantaddress");
 const emailTempaltes = require("../config/emailtemplate");
 /* GET home page. */
 const saveTenantAddress = async (address, created_by, tenant_id, contact) => {
+  console.log(`SaveTenant Address :: contact::`, contact);
   return await new TenantAddress({
     tenant_id: tenant_id,
     address: address.address,
@@ -87,9 +88,10 @@ router.post("/onboard", async (req, res) => {
         }).save();
         //address save...
         const tAddress = await saveTenantAddress(
-          { address, country, city, state, postalCode, contact },
+          { address, country, city, state, postalCode },
           created_by,
-          tenant._id
+          tenant._id,
+          contact
         );
         //email template...
         if (token && tAddress) {
@@ -603,7 +605,7 @@ router.get("/getTenants", async (req, res) => {
     const tenant = await Tenant.find(query, {}, options);    
     let results = [];
     tenant.forEach((value) => {
-      console.log(value);
+      // console.log(value);
       results.push(value);
     });
     if (tenant) {

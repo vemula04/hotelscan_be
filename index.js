@@ -16,8 +16,8 @@ const server = http.createServer(app);
 // Configuring body parser middleware
 // app.use(bodyParser.urlencoded({ extended: false }));
 // app.use(bodyParser.json());
-app.use(bodyParser.json({limit: "50mb"}));
-app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
+app.use(bodyParser.json({limit: "100mb"}));
+app.use(bodyParser.urlencoded({limit: "100mb", extended: true, parameterLimit:50000}));
 app.use(cors());
 app.use(upload());
 

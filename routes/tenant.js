@@ -26,7 +26,7 @@ const saveTenantAddress = async (address, created_by, tenant_id, contact) => {
     postalCode: address.postalCode,
     created_by: created_by,
     created_on: moment().format(),
-    contact: contact
+    contact: contact,
   }).save();
 };
 router.post("/onboard", async (req, res) => {
@@ -45,7 +45,7 @@ router.post("/onboard", async (req, res) => {
     postalCode,
     created_by,
     business_url,
-    contact
+    contact,
   } = req.body;
   const { updated_by } = {
     updated_by: "3242345",
@@ -66,7 +66,14 @@ router.post("/onboard", async (req, res) => {
       created_on: moment().format(),
       business_url: business_url,
     });
-    const fn_tnt = await Tenant.findOne({ email: email });
+    const query = {
+      $or: [
+        { email: email },
+        { name: name }
+      ]
+    };
+    const fn_tnt = await Tenant.findOne(query);
+    
     if (!fn_tnt) {
       await tenant
         .save()
@@ -196,13 +203,13 @@ router.post("/onboard", async (req, res) => {
                                     padding-top: 25px;
                                     color: #000000;
                                     font-family: sans-serif;" class="header">
-                                        Hotel Scanner Application
+                                        Steal Deals Application
                                 </td>
                             </tr>
                             
                             <!-- SUBHEADER -->
                             <!-- Set text color and font family ("sans-serif" or "Georgia, serif") -->
-                            <tr>
+                            <!-- <tr>
                                 <td align="center" valign="top" style="border-collapse: collapse; border-spacing: 0; margin: 0; padding: 0; padding-bottom: 3px; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; font-size: 18px; font-weight: 300; line-height: 150%;
                                     padding-top: 5px;
                                     color: #000000;
@@ -210,6 +217,7 @@ router.post("/onboard", async (req, res) => {
                                         Works for&nbsp;All Devices
                                 </td>
                             </tr>
+                            -->
 
                             <!-- HERO IMAGE -->
                             <!-- Image text color should be opposite to background color. Set your url, image src, alt and title. Alt text should fit the image size. Real image size should be x2 (wrapper x2). Do not set height for flexible images (including "auto"). URL format: http://domain.com/?utm_source={{Campaign-Source}}&utm_medium=email&utm_content={{Ìmage-Name}}&utm_campaign={{Campaign-Name}} -->
@@ -351,7 +359,7 @@ router.post("/onboard", async (req, res) => {
                                     padding-bottom: 25px;
                                     color: #000000;
                                     font-family: sans-serif;" class="paragraph">
-                                        Have a&nbsp;question? <a href="mailto:support@ourteam.com" target="_blank" style="color: #127DB3; font-family: sans-serif; font-size: 17px; font-weight: 400; line-height: 160%;">support@ourteam.com</a>
+                                        Have a&nbsp;question? <a href="mailto:info@stealdeals.com.au" target="_blank" style="color: #127DB3; font-family: sans-serif; font-size: 17px; font-weight: 400; line-height: 160%;">info@stealdeals.com.au</a>
                                 </td>
                             </tr>
 
@@ -455,7 +463,7 @@ router.post("/onboard", async (req, res) => {
         });
       }
     } else {
-      res.status(500).send({ message: "Duplicate email id", statusCode: 501 });
+      res.send({ message: "Tenant already exist either with Email ID or Tenant Name", statusCode: 501 });
     }
   } catch (error) {
     console.error(error);
@@ -593,7 +601,7 @@ router.get("/verify/:id/:token", async (req, res, next) => {
 
 router.get("/getTenants", async (req, res) => {
   try {
-    // Query
+    // Query    
     const query = {};
     const options = {
       // Sort returned documents in ascending order by title (A->Z)
@@ -602,7 +610,9 @@ router.get("/getTenants", async (req, res) => {
       // Include only the `name` and `logo` fields in each returned document
       // projection: { _id: 0, name: 1, logo: 1 },
     };
-    const tenant = await Tenant.find(query, {}, options);    
+    const {offset, limit} = req.query;
+    const tenant = await Tenant.find(query, {}, options)
+    // .limit(limit).skip(offset);;
     let results = [];
     tenant.forEach((value) => {
       // console.log(value);
@@ -695,59 +705,56 @@ router.post("/generateqrcode", async function (req, res) {
   const { tenantName, email } = req.body;
   const url = `${config.BASE_URI}/#/${tenantName}/home`;
   let img = await QRCode.toDataURL(url);
-  // QRCode.toDataURL(item, async function (err, url) {
-  //     await send(item, url)
-  // })
-  // let transporter = nodeMailer.createTransport({
-  //     host: 'test',
-  //     port: 587,
-  //     secure: false,
-  //     auth: {
-  //         user: 'tes',
-  //         pass: 'password'
-  //     }
-  // });
-  let mailOptions = {
-    from: "", // sender address
-    to: "", // list of receivers
-    subject: `QR Code for Tenant - ${tenantName}`, // Subject line
-    html: emailTempaltes.loadQRCodeTemplate(tenantName, url, img), // html body   
-  };
-  // console.log(mailOptions.html);
-  const emailres = await sendEmail(
-    email,
-    mailOptions.subject,
-    "",
-    mailOptions.html
-  );
-  // transporter.sendMail(mailOptions, (error, info) => {
-  //     if (error) {
-  //         return console.log(error);
-  //     }
-  //     //console.log('Message %s sent: %s', info.messageId, info.response);
-  //     res.render('index');
-  // });
-  let statusCode = 500;
-  if (emailres.success) {
-    statusCode = 200;
-  } else {
-    statusCode = 404;
-  }
-  res.send({ statusCode: statusCode, data: emailres });
+  // Define the path and filename for the output image
+  const outputPath = `${tenantName}.png`; // Replace with your desired path
+
+  QRCode.toFile(outputPath, url, async (err) => {
+    if (err) {
+      console.error("Error generating QR code:", err);
+    } else {
+      console.log(`QR code image generated successfully: ${outputPath}`);
+      let mailOptions = {
+        from: "", // sender address
+        to: "", // list of receivers
+        subject: `QR Code for Tenant - ${tenantName}`, // Subject line
+        html: emailTempaltes.loadQRCodeTemplate(tenantName, url, img), // html body   ,
+        attachments: [
+          {
+            filename: `QRCode :: ${tenantName}`,
+            path: outputPath,
+            contentType: "image/png",
+          },
+        ],
+      };
+      // console.log(mailOptions.html);
+      const emailres = await sendEmail(
+        email,
+        mailOptions.subject,
+        "",
+        mailOptions.html,
+        mailOptions.attachments
+      );
+      let statusCode = 500;
+      if (emailres.success) {
+        statusCode = 200;
+      } else {
+        statusCode = 404;
+      }
+      //unlink the generated file locally...
+      if (outputPath) {
+        Utilities.deleteAFile(outputPath);
+      }
+      res.send({ statusCode: statusCode, data: emailres });
+    }
+  });  
 });
 //update Tenant details...
 router.post("/updateTenant", async (req, res) => {
   try {
     console.log(`UpdateTenant ::`);
 
-    const {
-      _id,
-      name,
-      url,
-      primary_color,
-      secondary_color,
-      updated_by,
-    } = req.body;
+    const { _id, name, url, primary_color, secondary_color, updated_by } =
+      req.body;
     const query = { name: name };
     const options = {
       // Sort returned documents in ascending order by title (A->Z)

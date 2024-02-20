@@ -526,4 +526,39 @@ router.post("/deleteItems", async (req, res) => {
     res.send({ statusCode: 404, data: [], message: err?.message });
   }
 });
+//update a special 
+router.post("/updateSpecial", async (req, res) => {
+  try {
+    const { _id, is_special, updated_by, currentIndex } = req.body;
+    console.log("updateSpecial action triggered", _id, is_special);
+    if (_id) {
+      const update_item = {                
+        is_special: is_special,        
+        updated_by: updated_by,
+        updated_on: moment().format()
+      };
+      console.log(update_item);
+  
+      const doc = await Item.findByIdAndUpdate(_id, update_item, {
+        new: true,
+      }).select({
+        status: 1,
+        _id: 1,
+        tenant_id: 1,
+        is_special: 1,
+      });
+      
+      res.send({ statusCode: 200, data: {doc,currentIndex}, message: "success" });
+    } else {
+      res.send({
+        statusCode: 404,
+        data: [],
+        message: "_id - expects an _id",
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    res.send({ statusCode: 404, data: [], message: err?.message });
+  }
+});
 module.exports = router;

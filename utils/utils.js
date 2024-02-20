@@ -1,6 +1,7 @@
 const config = require("../config/config");
 const path = require("path");
-
+const fs = require('fs');
+      
 module.exports = {
   getFileExtension: (fileName) => {
     if (!fileName) return fileName;
@@ -32,4 +33,19 @@ module.exports = {
       console.log("Error :: ", err?.message);
     }
   },
+  deleteAFile: async (filePath = "") => {
+    try{
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(err);
+        } else {
+          console.log('File deleted successfully!');
+          return "success";
+        }
+      });      
+    } catch (err){      
+      console.log("EXCEPTION OCCURRED :: deleteAFile", err);
+      console.error(err)
+    }
+  }
 };

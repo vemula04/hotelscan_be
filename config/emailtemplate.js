@@ -1005,7 +1005,7 @@ module.exports = {
                       <p><div class="copyright text-center text-sm text-muted text-lg-start">
                       © ${new Date().getFullYear()} ,
                       <i class="fa fa-heart"></i> &nbsp; 
-                      <a href="#" class="font-weight-bold" target="_blank">Hotel APP</a>                
+                      <a href="#" class="font-weight-bold" target="_blank">Steal Deals</a>                
                     </div></p>
                   </td>
                 </tr>
@@ -1329,7 +1329,7 @@ module.exports = {
                     <tr>
                         <td style="padding: 0 2.5em; text-align: center; padding-bottom: 3em;">
                             <div class="text">
-                                <h3>Please use the below QR Code for your Business:</h3>
+                                <h3>Please use the QR Code for your Business:</h3>
                             </div>
                         </td>
                     </tr>

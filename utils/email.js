@@ -3,7 +3,7 @@ const config = require("../config/config");
 // const eConfig = config.EMAIL;
 const eConfig = config.LIVE_EMAIL;
 // const eConfig = config.ZOHO_MAIL;
-const sendEmail = async (email, subject, text, html) => {
+const sendEmail = async (email, subject, text, html, attachments = []) => {
   try {
     const transporter = nodemailer.createTransport({
       host: eConfig.host,
@@ -22,7 +22,8 @@ const sendEmail = async (email, subject, text, html) => {
       to: email,
       subject: subject,
       // text: text,
-      html: html
+      html: html,
+      attachments: attachments
     });
     console.log("email sent sucessfully");
     return {success: true, message: "success"}
